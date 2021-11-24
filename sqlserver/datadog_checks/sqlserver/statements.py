@@ -232,36 +232,23 @@ class SqlserverStatementMetrics(DBMAsyncJob):
         """
         start_time = time.time()
         plans_submitted = 0
-        try:
-            # re-use the check's conn module, but set extra_key=dbm- to ensure we get our own
-            # raw connection. adodbapi and pyodbc modules are thread safe, but connections are not.
-            with self.check.connection.open_managed_default_connection(key_prefix=self._conn_key_prefix):
-                with self.check.connection.get_managed_cursor(key_prefix=self._conn_key_prefix) as cursor:
-                    rows = self._collect_metrics_rows(cursor)
-                    if not rows:
-                        return
-                    for event in self._rows_to_fqt_events(rows):
-                        self.check.database_monitoring_query_sample(
-                            json.dumps(event, default=default_json_event_encoding)
-                        )
-                    payload = self._to_metrics_payload(rows)
-                    self.check.database_monitoring_query_metrics(
-                        json.dumps(payload, default=default_json_event_encoding)
-                    )
-                    for event in self._collect_plans(rows, cursor):
-                        self.check.database_monitoring_query_sample(
-                            json.dumps(event, default=default_json_event_encoding)
-                        )
-                        plans_submitted += 1
-        except Exception:
-            self.log.exception('Unable to collect statement metrics due to an error')
-            self.check.count(
-                "dd.sqlserver.statements.error",
-                1,
-                tags=self.check.debug_tags(),
-                hostname=self.check.resolved_hostname,
-            )
-            return []
+
+        # exception handling deliberately skipped here to leave it to be handled by the DBMAsyncJob, which logs
+        # and reports in a standardized way for DBM integrations.
+        # re-use the check's conn module, but set extra_key=dbm- to ensure we get our own
+        # raw connection. adodbapi and pyodbc modules are thread safe, but connections are not.
+        with self.check.connection.open_managed_default_connection(key_prefix=self._conn_key_prefix):
+            with self.check.connection.get_managed_cursor(key_prefix=self._conn_key_prefix) as cursor:
+                rows = self._collect_metrics_rows(cursor)
+                if not rows:
+                    return
+                for event in self._rows_to_fqt_events(rows):
+                    self.check.database_monitoring_query_sample(json.dumps(event, default=default_json_event_encoding))
+                payload = self._to_metrics_payload(rows)
+                self.check.database_monitoring_query_metrics(json.dumps(payload, default=default_json_event_encoding))
+                for event in self._collect_plans(rows, cursor):
+                    self.check.database_monitoring_query_sample(json.dumps(event, default=default_json_event_encoding))
+                    plans_submitted += 1
 
         elapsed_ms = (time.time() - start_time) * 1000
         self.check.histogram(
