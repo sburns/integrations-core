@@ -71,6 +71,11 @@ def instance_docker():
     return deepcopy(INSTANCE_DOCKER)
 
 
+@pytest.fixture
+def instance_docker_universal():
+    return deepcopy(INSTANCE_DOCKER)
+
+
 # the default timeout in the integration tests is deliberately elevated beyond the default timeout in the integration
 # itself in order to reduce flakiness due to any sort of slowness in the tests
 DEFAULT_TIMEOUT = 30
