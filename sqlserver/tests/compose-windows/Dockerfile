@@ -11,4 +11,4 @@ RUN curl https://go.microsoft.com/fwlink/?linkid=866662 -o SQL2019-SSEI-Dev.exe
 COPY sqlserver-initial-setup.ps1 sqlserver-initial-setup.ps1
 #RUN powershell -F .\sqlserver-initial-setup.ps1
 
-#CMD ping -t localhost > NUL
+CMD ping -t localhost > NUL
