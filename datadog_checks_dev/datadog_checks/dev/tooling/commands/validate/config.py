@@ -3,6 +3,7 @@
 # Licensed under a 3-clause BSD style license (see LICENSE)
 import click
 import yaml
+import difflib
 
 from ....fs import basepath, file_exists, path_join, read_file, write_file
 from ...config_validator.validator import validate_config
@@ -123,6 +124,12 @@ def config(ctx, check, sync, verbose):
                         else:
                             files_failed[example_file_path] = True
                             message = f'File `{example_file}` is not in sync, run "ddev validate config -s"'
+                            if file_exists(example_file_path):
+                                example_file = read_file(example_file_path)
+                                for diff_line in difflib.context_diff(
+                                    example_file.splitlines(), contents.splitlines(), "current", "expected"
+                                ):
+                                    message += f'\n{diff_line}'
                             check_display_queue.append(
                                 lambda example_file=example_file, **kwargs: echo_failure(message, **kwargs)
                             )
